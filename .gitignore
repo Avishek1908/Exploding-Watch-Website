@@ -1,0 +1,12 @@
+# Screenshots
+*.png
+
+# Code workspace file
+*.code-workspace
+
+# Claude internal
+.claude/
+
+# OS files
+.DS_Store
+Thumbs.db

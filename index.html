@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Art of Time</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet" />
+  <style>
+    /* ───── Reset & Base ───── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html {
+      scroll-behavior: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #333 #000;
+    }
+
+    body {
+      background: #000;
+      color: #e0e0e0;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::selection {
+      background: rgba(200, 170, 110, 0.3);
+      color: #fff;
+    }
+
+    /* ───── Loading Screen ───── */
+    #loader {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.8s ease, visibility 0.8s ease;
+    }
+
+    #loader.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    #loader h2 {
+      font-family: 'Playfair Display', serif;
+      font-weight: 400;
+      font-size: 1.4rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: #c8aa6e;
+      margin-bottom: 2rem;
+    }
+
+    .loader-bar-track {
+      width: 200px;
+      height: 1px;
+      background: #222;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .loader-bar-fill {
+      height: 100%;
+      background: #c8aa6e;
+      width: 0%;
+      transition: width 0.15s ease;
+    }
+
+    .loader-percent {
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      color: #555;
+      margin-top: 1rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ───── Canvas (sticky watch animation) ───── */
+    #canvas-wrap {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    #canvas-wrap canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+    }
+
+    /* ───── Scroll Spacer ───── */
+    #scroll-spacer {
+      position: relative;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* ───── Content Sections ───── */
+    .section {
+      position: relative;
+      z-index: 2;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      pointer-events: auto;
+    }
+
+    .section-inner {
+      width: 100%;
+      max-width: 600px;
+      padding: 4rem 2rem;
+      opacity: 0;
+      transform: translateY(60px);
+      transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+                  transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .section-inner.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .section--left .section-inner { margin-left: 8vw; }
+    .section--right .section-inner { margin-left: auto; margin-right: 8vw; }
+    .section--center .section-inner {
+      margin: 0 auto;
+      text-align: center;
+      max-width: 700px;
+    }
+
+    /* ───── Typography ───── */
+    .section-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: #c8aa6e;
+      margin-bottom: 1.5rem;
+      font-weight: 500;
+    }
+
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-weight: 500;
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      line-height: 1.15;
+      color: #fff;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.01em;
+    }
+
+    .section-title em {
+      font-style: italic;
+      color: #c8aa6e;
+    }
+
+    .section-text {
+      font-size: 0.95rem;
+      line-height: 1.8;
+      color: #999;
+      font-weight: 300;
+      max-width: 480px;
+    }
+
+    .section--center .section-text {
+      margin: 0 auto;
+    }
+
+    .section--right .section-text {
+      margin-left: auto;
+    }
+
+    .divider {
+      width: 40px;
+      height: 1px;
+      background: #c8aa6e;
+      margin: 1.5rem 0;
+      opacity: 0.6;
+    }
+
+    .section--center .divider {
+      margin: 1.5rem auto;
+    }
+
+    .section--right .divider {
+      margin-left: auto;
+    }
+
+    /* ───── Hero (first section) ───── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-inner {
+      opacity: 0;
+      transform: translateY(40px);
+      animation: heroIn 1.4s cubic-bezier(0.22, 1, 0.36, 1) 0.5s forwards;
+    }
+
+    @keyframes heroIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      color: #c8aa6e;
+      margin-bottom: 1.5rem;
+      font-weight: 500;
+    }
+
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-weight: 400;
+      font-size: clamp(3rem, 7vw, 6rem);
+      line-height: 1.05;
+      color: #fff;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-subtitle {
+      font-size: 1rem;
+      color: #666;
+      font-weight: 300;
+      letter-spacing: 0.1em;
+    }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 3rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      opacity: 0;
+      animation: hintIn 1s ease 2s forwards;
+    }
+
+    @keyframes hintIn {
+      to { opacity: 1; }
+    }
+
+    .scroll-hint span {
+      font-size: 0.6rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: #444;
+    }
+
+    .scroll-line {
+      width: 1px;
+      height: 40px;
+      background: linear-gradient(to bottom, #c8aa6e, transparent);
+      animation: scrollPulse 2s ease infinite;
+    }
+
+    @keyframes scrollPulse {
+      0%, 100% { opacity: 0.3; transform: scaleY(0.6); }
+      50% { opacity: 1; transform: scaleY(1); }
+    }
+
+    /* ───── Stats Row ───── */
+    .stats {
+      display: flex;
+      gap: 3rem;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .section--center .stats {
+      justify-content: center;
+    }
+
+    .stat-number {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      color: #c8aa6e;
+      font-weight: 500;
+    }
+
+    .stat-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #555;
+      margin-top: 0.25rem;
+    }
+
+    /* ───── CTA Section ───── */
+    .cta-btn {
+      display: inline-block;
+      margin-top: 2rem;
+      padding: 1rem 3rem;
+      border: 1px solid #c8aa6e;
+      color: #c8aa6e;
+      text-decoration: none;
+      font-size: 0.7rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      font-weight: 500;
+      transition: all 0.4s ease;
+      pointer-events: auto;
+      cursor: pointer;
+      background: transparent;
+    }
+
+    .cta-btn:hover {
+      background: #c8aa6e;
+      color: #000;
+    }
+
+    /* ───── Footer ───── */
+    .footer {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 4rem 2rem;
+      pointer-events: auto;
+    }
+
+    .footer-text {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #333;
+    }
+
+    /* ───── Responsive ───── */
+    @media (max-width: 768px) {
+      .section--left .section-inner,
+      .section--right .section-inner {
+        margin-left: 1.5rem;
+        margin-right: 1.5rem;
+      }
+
+      .section--right .section-text,
+      .section--right .divider {
+        margin-left: 0;
+      }
+
+      .stats { gap: 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Loading Screen -->
+  <div id="loader">
+    <h2>The Art of Time</h2>
+    <div class="loader-bar-track">
+      <div class="loader-bar-fill" id="loader-fill"></div>
+    </div>
+    <div class="loader-percent" id="loader-percent">0%</div>
+  </div>
+
+  <!-- Sticky Canvas -->
+  <div id="canvas-wrap">
+    <canvas id="watch-canvas"></canvas>
+  </div>
+
+  <!-- Scrollable Content -->
+  <div id="scroll-spacer">
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-inner">
+        <div class="hero-label">Swiss Horology Since 1905</div>
+        <h1 class="hero-title">The Art<br>of Time</h1>
+        <p class="hero-subtitle">Precision engineered. Eternally crafted.</p>
+      </div>
+      <div class="scroll-hint">
+        <span>Explore</span>
+        <div class="scroll-line"></div>
+      </div>
+    </div>
+
+    <!-- Section 1: Origins -->
+    <div class="section section--left">
+      <div class="section-inner">
+        <div class="section-label">Chapter I</div>
+        <h2 class="section-title">Where Time <em>Began</em></h2>
+        <div class="divider"></div>
+        <p class="section-text">
+          In 1905, a young visionary set out to create something the world had never seen — a wristwatch
+          that combined the precision of marine chronometers with the elegance of fine jewelry. From a
+          small workshop in Geneva, a legacy was born that would redefine how humanity measures its
+          most precious resource.
+        </p>
+      </div>
+    </div>
+
+    <!-- Section 2: Craftsmanship -->
+    <div class="section section--right">
+      <div class="section-inner">
+        <div class="section-label">Chapter II</div>
+        <h2 class="section-title">The Pursuit of <em>Perfection</em></h2>
+        <div class="divider"></div>
+        <p class="section-text">
+          Every movement is assembled by hand. Over 200 components, each finished to
+          tolerances invisible to the naked eye. The balance wheel oscillates 28,800 times
+          per hour — a heartbeat of mechanical precision that has remained unchanged for
+          over a century.
+        </p>
+        <div class="stats">
+          <div>
+            <div class="stat-number">200+</div>
+            <div class="stat-label">Components</div>
+          </div>
+          <div>
+            <div class="stat-number">28,800</div>
+            <div class="stat-label">Vibrations / Hour</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Innovation -->
+    <div class="section section--left">
+      <div class="section-inner">
+        <div class="section-label">Chapter III</div>
+        <h2 class="section-title">A Century of <em>Innovation</em></h2>
+        <div class="divider"></div>
+        <p class="section-text">
+          From the first waterproof case in 1926 to the perpetual rotor in 1931, each decade
+          brought breakthroughs that others could only follow. The quest was never to keep pace
+          with time — it was to master it. Today, every timepiece undergoes testing that exceeds
+          industry standards by a factor of two.
+        </p>
+      </div>
+    </div>
+
+    <!-- Section 4: Movement -->
+    <div class="section section--center">
+      <div class="section-inner">
+        <div class="section-label">Chapter IV</div>
+        <h2 class="section-title">Inside the <em>Movement</em></h2>
+        <div class="divider"></div>
+        <p class="section-text">
+          What you see before you is not merely a watch — it is an orchestra of gears,
+          springs, and jewels performing in perfect harmony. The mainspring stores energy.
+          The escapement regulates its release. The balance wheel keeps the rhythm. Together,
+          they transform raw force into the gentle, unwavering passage of time.
+        </p>
+        <div class="stats">
+          <div>
+            <div class="stat-number">48h</div>
+            <div class="stat-label">Power Reserve</div>
+          </div>
+          <div>
+            <div class="stat-number">31</div>
+            <div class="stat-label">Jewels</div>
+          </div>
+          <div>
+            <div class="stat-number">±2s</div>
+            <div class="stat-label">Daily Accuracy</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 5: Legacy -->
+    <div class="section section--right">
+      <div class="section-inner">
+        <div class="section-label">Chapter V</div>
+        <h2 class="section-title">Built to <em>Endure</em></h2>
+        <div class="divider"></div>
+        <p class="section-text">
+          A great watch does not simply tell time — it transcends it. Passed from one
+          generation to the next, each scratch and patina tells a story. These are not
+          possessions. They are heirlooms. Witnesses to lives well lived, moments worth
+          remembering, and the quiet confidence that comes from wearing something truly
+          extraordinary.
+        </p>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="section section--center">
+      <div class="section-inner">
+        <div class="section-label">The Collection</div>
+        <h2 class="section-title">Your Time <em>Awaits</em></h2>
+        <div class="divider"></div>
+        <p class="section-text">
+          Discover a timepiece that speaks to who you are — and who you aspire to become.
+        </p>
+        <a href="#" class="cta-btn">Explore the Collection</a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p class="footer-text">The Art of Time &mdash; Swiss Horology</p>
+    </div>
+
+  </div>
+
+  <script>
+    (() => {
+      const FRAME_COUNT = 120;
+      const FRAME_PATH = i => `frames/frame_${String(i).padStart(4, '0')}.jpg`;
+
+      const canvas = document.getElementById('watch-canvas');
+      const ctx = canvas.getContext('2d');
+      const loaderFill = document.getElementById('loader-fill');
+      const loaderPercent = document.getElementById('loader-percent');
+      const loader = document.getElementById('loader');
+
+      const images = [];
+      let loadedCount = 0;
+      let currentFrame = 0;
+      let targetFrame = 0;
+      let rafId = null;
+
+      // ───── Preload all frames ─────
+      function preloadImages() {
+        return new Promise(resolve => {
+          for (let i = 1; i <= FRAME_COUNT; i++) {
+            const img = new Image();
+            img.src = FRAME_PATH(i);
+            img.onload = img.onerror = () => {
+              loadedCount++;
+              const pct = Math.round((loadedCount / FRAME_COUNT) * 100);
+              loaderFill.style.width = pct + '%';
+              loaderPercent.textContent = pct + '%';
+              if (loadedCount === FRAME_COUNT) resolve();
+            };
+            images.push(img);
+          }
+        });
+      }
+
+      // ───── Canvas sizing ─────
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        drawFrame(currentFrame);
+      }
+
+      // ───── Draw a frame ─────
+      function drawFrame(index) {
+        const img = images[index];
+        if (!img || !img.complete) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Fill black background
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Scale image to cover canvas while maintaining aspect ratio
+        const imgRatio = img.width / img.height;
+        const canvasRatio = canvas.width / canvas.height;
+
+        let drawW, drawH, drawX, drawY;
+
+        if (canvasRatio > imgRatio) {
+          // Canvas is wider — fit to height, allow image to be centered
+          drawH = canvas.height * 0.85;
+          drawW = drawH * imgRatio;
+        } else {
+          // Canvas is taller — fit to width
+          drawW = canvas.width * 0.85;
+          drawH = drawW / imgRatio;
+        }
+
+        drawX = (canvas.width - drawW) / 2;
+        drawY = (canvas.height - drawH) / 2;
+
+        ctx.drawImage(img, drawX, drawY, drawW, drawH);
+      }
+
+      // ───── Smooth animation loop ─────
+      function animate() {
+        if (Math.abs(currentFrame - targetFrame) > 0.3) {
+          currentFrame += (targetFrame - currentFrame) * 0.15;
+          drawFrame(Math.round(currentFrame));
+        }
+        rafId = requestAnimationFrame(animate);
+      }
+
+      // ───── Scroll handler ─────
+      function onScroll() {
+        const scrollTop = window.scrollY;
+        const maxScroll = document.body.scrollHeight - window.innerHeight;
+        const scrollFraction = Math.min(scrollTop / maxScroll, 1);
+        targetFrame = Math.min(
+          FRAME_COUNT - 1,
+          Math.floor(scrollFraction * FRAME_COUNT)
+        );
+      }
+
+      // ───── Intersection Observer for section reveals ─────
+      function setupObserver() {
+        const sections = document.querySelectorAll('.section-inner');
+        const observer = new IntersectionObserver(
+          entries => {
+            entries.forEach(entry => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+              }
+            });
+          },
+          { threshold: 0.15, rootMargin: '0px 0px -50px 0px' }
+        );
+        sections.forEach(s => observer.observe(s));
+      }
+
+      // ───── Init ─────
+      async function init() {
+        await preloadImages();
+        resizeCanvas();
+        drawFrame(0);
+
+        // Hide loader
+        loader.classList.add('hidden');
+        setTimeout(() => { loader.style.display = 'none'; }, 800);
+
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', resizeCanvas);
+
+        setupObserver();
+        animate();
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>
