@@ -81,10 +81,13 @@
       font-variant-numeric: tabular-nums;
     }
 
-    /* ───── Canvas (sticky watch animation) ───── */
+    /* ───── Canvas (sticky watch animation) — right half ───── */
     #canvas-wrap {
       position: fixed;
-      inset: 0;
+      top: 0;
+      right: 0;
+      width: 50%;
+      height: 100%;
       z-index: 0;
     }
 
@@ -92,7 +95,6 @@
       width: 100%;
       height: 100%;
       display: block;
-      object-fit: contain;
     }
 
     /* ───── Scroll Spacer ───── */
@@ -102,10 +104,11 @@
       pointer-events: none;
     }
 
-    /* ───── Content Sections ───── */
+    /* ───── Content Sections — left half ───── */
     .section {
       position: relative;
       z-index: 2;
+      width: 50%;
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -127,12 +130,12 @@
       transform: translateY(0);
     }
 
-    .section--left .section-inner { margin-left: 8vw; }
-    .section--right .section-inner { margin-left: auto; margin-right: 8vw; }
+    .section--left .section-inner  { margin-left: 8vw; }
+    .section--right .section-inner { margin-left: 8vw; }
     .section--center .section-inner {
-      margin: 0 auto;
-      text-align: center;
-      max-width: 700px;
+      margin-left: 8vw;
+      text-align: left;
+      max-width: 600px;
     }
 
     /* ───── Typography ───── */
@@ -169,11 +172,11 @@
     }
 
     .section--center .section-text {
-      margin: 0 auto;
+      margin: 0;
     }
 
     .section--right .section-text {
-      margin-left: auto;
+      margin-left: 0;
     }
 
     .divider {
@@ -185,20 +188,22 @@
     }
 
     .section--center .divider {
-      margin: 1.5rem auto;
+      margin: 1.5rem 0;
     }
 
     .section--right .divider {
-      margin-left: auto;
+      margin-left: 0;
     }
 
-    /* ───── Hero (first section) ───── */
+    /* ───── Hero (first section) — left half ───── */
     .hero {
+      width: 50%;
       min-height: 100vh;
       display: flex;
       align-items: center;
-      justify-content: center;
-      text-align: center;
+      justify-content: flex-start;
+      padding-left: 8vw;
+      text-align: left;
       position: relative;
       z-index: 2;
     }
@@ -242,8 +247,7 @@
     .scroll-hint {
       position: absolute;
       bottom: 3rem;
-      left: 50%;
-      transform: translateX(-50%);
+      left: 8vw;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -284,7 +288,7 @@
     }
 
     .section--center .stats {
-      justify-content: center;
+      justify-content: flex-start;
     }
 
     .stat-number {
@@ -343,15 +347,26 @@
 
     /* ───── Responsive ───── */
     @media (max-width: 768px) {
-      .section--left .section-inner,
-      .section--right .section-inner {
-        margin-left: 1.5rem;
-        margin-right: 1.5rem;
+      #canvas-wrap {
+        position: relative;
+        width: 100%;
+        height: 50vh;
       }
 
-      .section--right .section-text,
-      .section--right .divider {
-        margin-left: 0;
+      .hero,
+      .section {
+        width: 100%;
+      }
+
+      .hero {
+        padding-left: 1.5rem;
+      }
+
+      .section--left .section-inner,
+      .section--right .section-inner,
+      .section--center .section-inner {
+        margin-left: 1.5rem;
+        margin-right: 1.5rem;
       }
 
       .stats { gap: 2rem; }
@@ -545,9 +560,9 @@
         });
       }
 
-      // ───── Canvas sizing ─────
+      // ───── Canvas sizing (right half only) ─────
       function resizeCanvas() {
-        canvas.width = window.innerWidth;
+        canvas.width = Math.round(window.innerWidth / 2);
         canvas.height = window.innerHeight;
         drawFrame(currentFrame);
       }
